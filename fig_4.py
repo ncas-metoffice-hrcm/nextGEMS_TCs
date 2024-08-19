@@ -1,3 +1,14 @@
+#!/bin/python3
+
+# fig_4.py
+#
+# This script reproduces Figure 4 in the following peer-reviewed publication:
+# Baker, A. J., Vannière, B., and Vidale, P. L. On the realism of tropical cyclones simulated
+# in global storm-resolving climate models. Geophysical Research Letters 51, e2024GL109841.
+# https://doi. org/10.1029/2024GL109841.
+# (Data sources are documented therein.)
+
+
 import os
 import xarray as xr
 import numpy as np
@@ -7,26 +18,18 @@ import matplotlib.lines as mlines
 from utilities import utilities
 
 
-# Options
-all_tsteps = False        # False = obs_at_vmax (only for radial wind profiles)
-
+# Setup
+# =====
 r = '8'                   # 8 m/s 
-#r = '17'                 # 17 m/s
 
 threshold_vmax = 17.      # vmax in m/s (0. = include all storms)
 threshold_mslp = 975.     # mslp in hPa (1020. = include all storms)
 
 density = True            # histograms in (b) and (c)
 
+working = 'nextGEMS/tropical_cyclone_analysis/'
 
-# Setup
-working = '/home/b/b381900/nextGEMS/tropical_cyclone_analysis/'
-
-members = utilities.declare_nextgems_simulations()
-MEMBERS = dict()
-for member in members:
-    if not member.startswith('ngc'):
-        MEMBERS[member] = members[member]
+MEMBERS = utilities.declare_nextgems_simulations()
 
 print('RADIUS of {} m/s\n'.format(r))
 
@@ -43,17 +46,15 @@ bins_rsize = np.arange(0.,11.,.5)
 centre_rsize = (bins_rsize[:-1] + bins_rsize[1:]) / 2.
 bins_ike = np.arange(0.,620.,10.)
 centre_ike = (bins_ike[:-1] + bins_ike[1:]) / 2.
-df = 1
+# df = "degrees freedom for linear regression"
 
 
 # IBTrACS
 print('loading IBTrACS...')
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
-ibtracs_dir = '/work/bb1153/b381900/data/observations/IBTrACS_v4/'
+ibtracs_dir = 'data/IBTrACS_v4/'
 ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
-#ibtracs_fn_nc = 'IBTrACS.since1980.v04r01.nc'
-#ibtracs_fn_nc = 'IBTrACS.EP.v04r00.nc'
 ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
 
 ibtracs_data = xr.open_dataset(ibtracs_ffp_nc)
@@ -134,7 +135,7 @@ handles.append(mlines.Line2D([0],[0],color = 'k',linewidth = 1.5,label = r'IBTrA
 #  - TC size
 #  - IKE
 #  - intensification rate / LMI as a function of RMW
-#  - IKE per TC vs TC size
+
 for member in MEMBERS:
     print(member)
     member_idx = list(MEMBERS.keys()).index(member)
@@ -159,7 +160,6 @@ for member in MEMBERS:
     track_ffp = os.path.join(working,track_fn)
     track_fn_rgrd = track_fn.replace('.txt','_regridded_025.txt')
     track_ffp_rgrd = os.path.join(working,track_fn_rgrd)
-    #storms = list(track_tempext_radprof_nextgems.load(track_ffp))
     try:
         storms_rgrd = list(track_tempext_radprof_nextgems.load(track_ffp_rgrd))
     except:
@@ -235,11 +235,6 @@ for member in MEMBERS:
     axes[1,1].scatter(rmw_minima,lmi,marker = '.',color = colour,alpha = 0.1)
     axes[1,1].plot(fit_x,fit_y,linestyle = '-',linewidth = 1.25,color = colour)
 
-    axes[1,2].errorbar(mean_r8,mean_ike8,xerr = std_r8/2,yerr = std_ike8/2,
-        fmt = '.',color = colour,ecolor = colour,elinewidth = 0.75)
-    axes[1,2].scatter(mean_r8,mean_ike8,s = mean_vmax*(mean_vmax/4),
-        marker = '.',color = colour,edgecolor = 'k',zorder = 3)
-
     handles.append(mlines.Line2D([0],[0],color = colour,linewidth = 1.25,label = label_fig+r' ($\it{n}$='+str(len(storms_rgrd))+')'))
 
 
@@ -291,12 +286,6 @@ axes[1,1].set_xlabel(r'RMW [$\degree$ from TC centre]')
 axes[1,1].set_ylim(0,70)
 axes[1,1].set_ylabel(r'LMI [$\degree$N]')
 
-axes[1,2].set_title('f',fontweight = 'bold',loc = 'left')
-#axes[1,2].set_xlim(2,6)
-axes[1,2].set_xlabel(r'$\it{R}_{'+r+'}$ [$\degree$ from TC centre]')
-#axes[1,2].set_ylim(0,1)
-axes[1,2].set_ylabel(r'IKE$_{'+r+'}$ [TJ per TC]')
-
 axes[1,3].legend(handles = handles,loc = 'center',prop = dict(size = 9),frameon = False)
 for loc in ['top','right']:
     for ax in axes.flatten():
@@ -305,13 +294,6 @@ for ax in [0,1]:
     axes[ax,3].set_axis_off()
 plt.tight_layout()
 
-fig_fn = 'figures/tc_size_distributions_cycle4'
-if all_tsteps:
-    fig_fn = fig_fn+'_all_tsteps'
-else:
-    fig_fn = fig_fn+'_select_tsteps'
-fig_ffp = os.path.join(working,fig_fn+'.pdf')
-print(fig_ffp)
-plt.savefig(fig_ffp)
+plt.savefig('figures/baker_et_al_2024_grl_fig_4')
 plt.show()
 print('done')
