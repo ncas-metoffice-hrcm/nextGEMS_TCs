@@ -1,25 +1,33 @@
-# tc_ri_and_compisites_cycle3.py
+#!/bin/python3
+#!/bin/python3
+
+# fig_3.py
+#
+# This script reproduces Figure 3 in the following peer-reviewed publication:
+# Baker, A. J., Vannière, B., and Vidale, P. L. On the realism of tropical cyclones simulated
+# in global storm-resolving climate models. Geophysical Research Letters 51, e2024GL109841.
+# https://doi. org/10.1029/2024GL109841.
+# (Data sources are documented therein.)
+
 
 import os, glob
 import numpy as np
 import xarray as xr
 from collections import OrderedDict
-#from scipy.stats.kde import gaussian_kde
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from storm_assess import track_tempext_nextgems, track_ibtracs
 from utilities import utilities
 
-# Options
-maxgap = '0'
-
 
 # Setup
+# =====
+maxgap = '0'
+
 ri_threshold = 15.4     # 15.4 m/s = 30 kt
 major_threshold = 49.4  # m/s
 hurr_threshold = 33.  # m/s
 
-#nstorms = 50
 percentile = 10.    # top percentile of storms
 
 geostrophic_normalisation = False
@@ -29,14 +37,10 @@ working = '/home/b/b381900/nextGEMS/tropical_cyclone_analysis/'
 ibt_track_dir = '/home/b/b381900/work/data/observations/IBTrACS_v4/'
 track_dir = '/work/bb1153/b381900/tracking/TempestExtremes/tracks/'
 
-members = utilities.declare_nextgems_simulations()
-MEMBERS = dict()
-for member in members:
-    if not 'HAM' in member:
-        MEMBERS[member] = members[member]
+MEMBERS = utilities.declare_nextgems_simulations()
 
-members = list(MEMBERS.keys())#['tco1279','tco2559','tco3999','IFS_28_NEMO_25_cycle3','IFS_9_NEMO_25_cycle3','IFS_9_FESOM_5_cycle3','IFS_4_FESOM_5_cycle3','IFS_9_FESOM_5_production',
-#'ngc2013','ngc2012','ngc2009','ngc3028_8','ngc3028_10','ngc4005_9']
+members = ['tco1279','tco2559','tco3999','IFS_28_NEMO_25_cycle3','IFS_9_NEMO_25_cycle3','IFS_9_FESOM_5_cycle3','IFS_4_FESOM_5_cycle3']
+
 ordered_keys = ['IBTrACS']+members
 resol_labels = ['']+[MEMBERS[member]['atmos_resol'] for member in MEMBERS]
 legend_labels = [MEMBERS[member]['label_fig'] for member in MEMBERS]
@@ -65,8 +69,6 @@ for obs_name in figure_args.keys():
     PDFs[obs_name] = dict()
 RI_RATIO = dict()
 RI_CASES = dict()
-MAJOR_CASES = dict()
-HURR_CASES = dict()
 STRONGEST_CASES = dict()
 
 # Load IBTrACS
@@ -74,10 +76,8 @@ STRONGEST_CASES = dict()
 print('loading IBTrACS...')
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
-ibtracs_dir = '/work/bb1153/b381900/data/observations/IBTrACS_v4/'
+ibtracs_dir = 'data/IBTrACS_v4/'
 ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
-#ibtracs_fn_nc = 'IBTrACS.since1980.v04r01.nc'
-#ibtracs_fn_nc = 'IBTrACS.EP.v04r00.nc'
 ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
 
 ibtracs_data = xr.open_dataset(ibtracs_ffp_nc)
@@ -117,8 +117,6 @@ hemispheres = ['NH','SH']
 years = range(1980,2021)
 
 RI_CASES['IBTrACS'] = list()
-MAJOR_CASES['IBTrACS'] = list()
-HURR_CASES['IBTrACS'] = list()
 STRONGEST_CASES['IBTrACS'] = list()
 
 ibt_storms = []
@@ -144,25 +142,16 @@ for storm in ibt_storms:
         obs.extend(dv)
         if any(v > ri_threshold for v in dv):
             RI_CASES['IBTrACS'].append(storm)
-        if storm.vmax > major_threshold:
-            MAJOR_CASES['IBTrACS'].append(storm)
-        if storm.vmax > hurr_threshold:
-            HURR_CASES['IBTrACS'].append(storm)
         if storm.vmax in strongest_vmaxs:
             STRONGEST_CASES['IBTrACS'].append(storm)
 
-#obs = [i for i in obs if i is not None]
-#obs = list(filter(lambda i: np.logical_not(np.isnan(i)),np.array(obs)))
-#PDFs['dv']['ibtracs'] = gaussian_kde(obs)
 PDFs['dv']['ibtracs'] = np.histogram(obs,BINS,density=True)
 
 ri_cases = [i for i in obs if i > ri_threshold]
-#ri_ratio = float(len(ri_cases)) / float(len(obs))
 obs_positive = [i for i in obs if i > 0.]
 ri_ratio = float(len(ri_cases)) / float(len(obs_positive))
 RI_RATIO['IBTrACS'] = round(ri_ratio,4)
 
-#axes[0,0].plot(BINS,PDFs['dv']['ibtracs'](BINS),color = 'k',linewidth = 2.,label = 'IBTrACS')
 axes[0,0].plot(PDFs['dv']['ibtracs'][1][:-1],PDFs['dv']['ibtracs'][0],color = 'k',linewidth = 2.,label = 'IBTrACS')
 
 # Load nextGEMS
@@ -172,7 +161,7 @@ for member in MEMBERS:
     cycle = MEMBERS[member]['cycle']
     grid = MEMBERS[member]['grid']
     duration = MEMBERS[member]['duration']
-    if member.startswith('ngc3') or member.startswith('ngc4'):
+    if member.startswith('ngc3'):
         zoom = member.rsplit('_')[-1]
     startdate = MEMBERS[member]['startdate']
     enddate = MEMBERS[member]['enddate']
@@ -180,10 +169,7 @@ for member in MEMBERS:
     label = MEMBERS[member]['label']
     label_fig = MEMBERS[member]['label_fig']
 
-    if member.startswith('IFS') and 'production' in member:
-        track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_nside512_maxgap{maxgap}.txt'.format(
-            member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap)
-    elif member.startswith('ngc3') or member.startswith('ngc4'):
+    if member.startswith('ngc3'):
         track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_maxgap{maxgap}_zoom{zoom}.txt'.format(
             member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap,zoom=zoom)
     else:
@@ -197,14 +183,7 @@ for member in MEMBERS:
         storms = list(track_tempext_nextgems.load(track_ffp))
 
     RI_CASES[member] = list()
-    MAJOR_CASES[member] = list()
-    HURR_CASES[member] = list()
     STRONGEST_CASES[member] = list()
-
-    if member.startswith('ngc2'):
-        storms = list(track_tempext_nextgems.load(track_ffp,unstructured_grid = True))
-    elif member.startswith('tco') or member.startswith('IFS') or member.startswith('ngc3'):
-        storms = list(track_tempext_nextgems.load(track_ffp,unstructured_grid = False))
 
     vmax_maxs = [storm.vmax for storm in storms]
 
@@ -219,17 +198,11 @@ for member in MEMBERS:
         obs.extend(dv)
         if any(v > ri_threshold for v in dv):
             RI_CASES[member].append(storm)
-        if storm.vmax > major_threshold:
-            MAJOR_CASES[member].append(storm)
-        if storm.vmax > hurr_threshold:
-            HURR_CASES[member].append(storm)
         if storm.vmax in strongest_vmaxs:
             STRONGEST_CASES[member].append(storm)
-    #PDFs['dv'][member] = gaussian_kde(obs)
     PDFs['dv'][member] = np.histogram(obs,BINS,density=True)
 
     ri_cases = [i for i in obs if i > ri_threshold]
-    #ri_ratio = float(len(ri_cases)) / float(len(obs))
     obs_positive = [i for i in obs if i > 0.]
     ri_ratio = float(len(ri_cases)) / float(len(obs_positive))
     RI_RATIO[member] = round(ri_ratio,4)
@@ -286,7 +259,7 @@ axes[1,0].set_axis_off()
 axes[1,1].set_axis_off()
 plt.tight_layout()
 
-plt.savefig('figures/RI_cycle4_IBTrACS_vs_ICON_and_IFS.pdf')
+plt.savefig('figures/baker_et_al_2024_grl_fig_3cd.pdf')
 plt.show()
 
 
@@ -296,14 +269,12 @@ plt.show()
 # Setup figure
 print('plotting composite timeseries')
 plt.clf()
-figure, axes = plt.subplots(nrows = 6,ncols = 1,figsize = (7,18))
+figure, axes = plt.subplots(nrows = 4,ncols = 1,figsize = (7,15))
 
 for member in ['IBTrACS']+members:
     TS = []
     MSLP = []
     VMAX = []
-    SST = []
-    PRECIP = []
 
     print(member)
     if member in list(MEMBERS.keys()):
@@ -315,9 +286,6 @@ for member in ['IBTrACS']+members:
         label_fig = MEMBERS[member]['label_fig']
 
     for S in STRONGEST_CASES[member]:
-    #for S in RI_CASES[member]:
-    #for S in MAJOR_CASES[member]:
-    #for S in HURR_CASES[member]:
         lifetime_S = S.nrecords()
         vmax_tstep = [S.obs[i].date for i in range(S.nrecords())].index(S.obs_at_vmax().date)
         standardised_t = np.linspace(-(vmax_tstep),lifetime_S-vmax_tstep-1,lifetime_S)
@@ -325,12 +293,6 @@ for member in ['IBTrACS']+members:
         # get variables
         mslp_s = np.array([S.obs[i].mslp for i in range(S.nrecords())])
         vmax_s = np.array([S.obs[i].vmax for i in range(S.nrecords())])
-        if not member == 'IBTrACS':
-            sst_s = np.array([S.obs[i].extras['sst'] for i in range(S.nrecords())])
-            if member.startswith('ngc'):
-                tp_s = np.array([S.obs[i].extras['tp']*86400. for i in range(S.nrecords())])
-            elif member.startswith('tco') or member.startswith('IFS'):
-                tp_s = np.array([S.obs[i].extras['tp'] for i in range(S.nrecords())])
         # handle missing values
         idx = np.where(vmax_s < 0.)[0]
         vmax_s[idx] = np.nan
@@ -338,29 +300,16 @@ for member in ['IBTrACS']+members:
         vmax_s[idx] = np.nan
         idx = np.where(mslp_s == 0.)[0]
         mslp_s[idx] = np.nan
-        if not member == 'IBTrACS':
-            idx = np.where(sst_s < 275.)[0]
-            sst_s[idx] = np.nan
-            idx = np.where(sst_s == 9999.)[0]
-            sst_s[idx] = np.nan
 
         TS.append(standardised_t)
         MSLP.append(mslp_s)
         VMAX.append(vmax_s)
-        if not member == 'IBTrACS':
-            SST.append(sst_s)
-            PRECIP.append(tp_s)
 
     mslp_composite_mean = []
     mslp_composite_std = []
     vmax_composite_mean = []
     vmax_composite_std = []
     sample_size = []
-    if not member == 'IBTrACS':
-        sst_composite_mean = []
-        sst_composite_std = []
-        tp_composite_mean = []
-        tp_composite_std = []
 
     min_ts = int(min([min(s) for s in TS]))
     max_ts = int(max([max(s) for s in TS]))
@@ -375,71 +324,47 @@ for member in ['IBTrACS']+members:
         vmax_composite_mean.append(np.nanmean(vmax_t,axis = 0))
         vmax_composite_std.append(np.nanstd(vmax_t,axis = 0))
         sample_size.append(len(vmax_t))
-        if not member == 'IBTrACS':
-            sst_t = [SST[s_i][TS[s_i].tolist().index(t)] for s_i in s_idx]
-            sst_composite_mean.append(np.nanmean(sst_t,axis = 0))
-            sst_composite_std.append(np.nanstd(sst_t,axis = 0))
-            tp_t = [PRECIP[s_i][TS[s_i].tolist().index(t)] for s_i in s_idx]
-            tp_composite_mean.append(np.nanmean(tp_t,axis = 0))
-            tp_composite_std.append(np.nanstd(tp_t,axis = 0))
 
     if member == 'IBTrACS':
         axes[0].plot(xaxis,vmax_composite_mean,linewidth=2.,color='k')
         axes[1].plot(xaxis,mslp_composite_mean,linewidth=2.,color='k')
-        axes[4].step(xaxis,sample_size,linewidth=2.,color='k')
+        axes[2].step(xaxis,sample_size,linewidth=2.,color='k')
     else:
         axes[0].plot(xaxis,vmax_composite_mean,linewidth=1.,color=colour)
         axes[1].plot(xaxis,mslp_composite_mean,linewidth=1.,color=colour)
-        axes[2].plot(xaxis,sst_composite_mean,linewidth=1.,color=colour)
-        axes[3].plot(xaxis,tp_composite_mean,linewidth=1.,color=colour)
-        axes[4].step(xaxis,sample_size,linewidth=1.,color=colour)
 
 # Format figure
-for ax,l in zip(range(5),['a','b','c','d','e']):
+for ax,l in zip(range(3),['a','b','c']):
     axes[ax].set_title(l,fontweight='bold',loc='left')
     axes[ax].axvline(x = 0,color = 'grey',linestyle = '--',linewidth = 1)
     axes[ax].set_xlim(-8,8)
-    if ax < 4:
+    if ax < 2:
         axes[ax].set_xlabel('')
-        #axes[ax].set_xticklabels([])
     for loc in ['top','right']:
         axes[ax].spines[loc].set_visible(False)
 axes[0].set_ylabel(r'$\it{v}_{max}$ [ms$^{-1}$]')
 axes[0].set_ylim(0,70)
 axes[1].set_ylabel(r'$\it{p}_{min}$ [hPa]')
 axes[1].set_ylim(900,1020)
-axes[2].set_ylabel(r'SST [K]')
-axes[2].set_ylim(280,310)
-axes[3].set_ylabel(r'pr [mm day$^{-1}$]')
-axes[3].set_ylim(0,40)
-axes[4].set_ylabel(r'$\it{n}$')
-axes[4].set_yscale('log')
-axes[4].set_ylim(1E0,6E2)
-axes[4].set_xlabel(r'composite t [days, centred on $\it{v}_{max}$]')
+axes[2].set_ylabel(r'$\it{n}$')
+axes[2].set_yscale('log')
+axes[2].set_ylim(1E0,6E2)
+axes[2].set_xlabel(r'composite t [days, centred on $\it{v}_{max}$]')
 if percentile == 10.:
     axes[0].set_title('Strongest decile  TCs')
 else:
     axes[0].set_title(r'Strongest {}% TCs'.format(percentile))
-#axes[0].set_title(r'RI ratio [threshold = {}'.format(ri_threshold)+' ms$^{-1}$]')
-#axes[0].set_title(r'Cat3 $-$ Cat5')
-#axes[0].set_title(r'Cat1 $-$ Cat5')
 labels = ['{} ({})'.format(member,len(STRONGEST_CASES[member])) for member in members]
-#labels = ['{} ({})'.format(member,len(RI_CASES[member])) for member in members]
-#labels = ['{} ({})'.format(member,len(MAJOR_CASES[member])) for member in members]
-#labels = ['{} ({})'.format(member,len(HURR_CASES[member])) for member in members]
-#handles = [mlines.Line2D([0],[0],color = 'k',linewidth = 2.,label = 'IBTrACS ({})'.format(len(ibt_storms)))]+\
 handels = [mlines.Line2D([0],[0],color = 'k',linewidth = 2.,label = 'IBTrACS ({})'.format(len(STRONGEST_CASES['IBTrACS'])))]+\
     [mlines.Line2D([0],[0],color = c,linewidth = 1.,label = l)\
         #for c,l in zip(['k','orange','goldenrod','firebrick','b','darkblue'],labels)]   # IFS cycles 2 & 3
         for c,l in zip([MEMBERS[member]['colour'] for member in members],legend_labels)]
-axes[5].legend(handles = handles,loc = 'center',ncol = 3,frameon = False,prop = dict(size = 8))
-axes[5].set_axis_off()
+axes[3].legend(handles = handles,loc = 'center',ncol = 3,frameon = False,prop = dict(size = 8))
+axes[3].set_axis_off()
 plt.tight_layout()
 
 # Save
-plt.savefig('figures/RI_composites_cycle4_IBTrACS_vs_ICON_and_IFS.pdf',bbox_inches = 'tight')
-#plt.savefig('figures/MAJOR_composites_IBTrACS_vs_ICON_and_IFS.pdf',bbox_inches = 'tight')
-#plt.savefig('figures/ALL_HURRICANE_composites_IBTrACS_vs_ICON_and_IFS.pdf',bbox_inches = 'tight')
+plt.savefig('figures/baker_et_al_2024_grl_fig_3ab.pdf',bbox_inches = 'tight')
 plt.show()
 
 print('done')
