@@ -32,9 +32,9 @@ percentile = 10.    # top percentile of storms
 geostrophic_normalisation = False
 latitude_threshold = 0.
 
-working = '/home/b/b381900/nextGEMS/tropical_cyclone_analysis/'
-ibt_track_dir = '/home/b/b381900/work/data/observations/IBTrACS_v4/'
-track_dir = '/work/bb1153/b381900/tracking/TempestExtremes/tracks/'
+working = 'nextGEMS/tropical_cyclone_analysis/'
+ibt_track_dir = 'data/IBTrACS_v4/'
+track_dir = 'tracks/'
 
 MEMBERS = utilities.declare_nextgems_simulations()
 
