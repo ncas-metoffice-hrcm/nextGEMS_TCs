@@ -55,8 +55,6 @@ print('loading IBTrACS...')
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
 ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
-#ibtracs_fn_nc = 'IBTrACS.since1980.v04r01.nc'
-#ibtracs_fn_nc = 'IBTrACS.EP.v04r00.nc'
 ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
 
 print('processing IBTrACS...')
@@ -118,7 +116,6 @@ for member in MEMBERS:
     coeff = np.polyfit(vmax_maxima,mslp_minima,df)
     poly1d = np.poly1d(coeff)
     fit_x = np.linspace(min(vmax_maxima),max(vmax_maxima),len(vmax_maxima))
-    #fit_x = np.linspace(1,90,90)
     fit_y = poly1d(fit_x)
 
     vmax_hist,vmax_edges = np.histogram(vmax_maxima,bins = bins_vmax)
