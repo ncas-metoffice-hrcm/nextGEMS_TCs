@@ -1,5 +1,4 @@
 #!/bin/python3
-#!/bin/python3
 
 # fig_3.py
 #
