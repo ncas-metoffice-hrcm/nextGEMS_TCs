@@ -181,8 +181,7 @@ for member in MEMBERS:
                 VMAX[member].append(storm.obs[i].vmax)
                 RSIZE[member].append(storm.obs[i].extras['r_'+r])
                 IKE[member].append(storm.obs[i].extras['ike_'+r])
-    #for storm in storms:
-    for storm in storms_rgrd:   # temp while I run radprofs for IFS cycle4 at full resolution
+    for storm in storms:
         if storm.mslp_min <= threshold_mslp:
             if all_tsteps:
                 rprof_storm = [storm.obs[i].extras['rprof'] for i in range(storm.nrecords())]
@@ -258,7 +257,6 @@ axes[0,1].set_xlabel(r'$\it{R}_{'+r+'}$ [$\degree$ from TC centre]')
 if density:
     axes[0,1].set_ylim(-0.04,0.3)
     axes[0,1].set_ylabel('Frequency [density]')
-    #axes[0,1].set_yticks(np.arange(0.,0.35,.05))
 else:
     axes[0,1].set_ylim(-0.5,4)
     axes[0,1].set_ylabel(r'Frequency [normalised by $\it{n}_{TC}$]')
