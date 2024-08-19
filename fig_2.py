@@ -1,38 +1,38 @@
 #!/bin/python3
 
-# tc_wind_pressure_cycle4.py
+# fig_2.py
+#
+# This script reproduces Figure 2 in the following peer-reviewed publication:
+# Baker, A. J., Vannière, B., and Vidale, P. L. On the realism of tropical cyclones simulated
+# in global storm-resolving climate models. Geophysical Research Letters 51, e2024GL109841.
+# https://doi. org/10.1029/2024GL109841.
+# (Data sources are documented therein.)
+#
 # IBTrACS data are converted to 1-minute wind speeds
 
 
-import os, iris
+import os
 import numpy as np
 import xarray as xr
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from storm_assess import track_tempext_nextgems, track_ibtracs
+from storm_assess import track_tempext_nextgems
 from utilities import utilities
-
-
-# OPTIONS
-# -------
-maxgap = '0'
 
 
 # SETUP
 # -----
-members = utilities.declare_nextgems_simulations()
-MEMBERS = dict()
-for member in members:
-    if not 'HAM' in member:
-        MEMBERS[member] = members[member]
+maxgap = '0'
+
+MEMBERS = utilities.declare_nextgems_simulations()
 
 df = 2
 
 ibtracs_dir = '/work/bb1153/b381900/data/observations/IBTrACS_v4/'
 track_dir = '/work/bb1153/b381900/tracking/TempestExtremes/tracks/'
 
-resol_labels = ['','9 km','4 km','2.8 km','28 km','9 km','9 km','4.4 km','9 km','5 km','10 km','10 km','24 km','6 km','12 km']
+resol_labels = ['','9 km','4 km','2.8 km','28 km','9 km','9 km','4.4 km','5 km','10 km','10 km','24 km','6 km']
 
 bins_vmax = np.arange(5,96,5)
 bins_mslp = np.arange(850,1021,10)
@@ -51,53 +51,6 @@ ax_histy.yaxis.set_tick_params(labelleft=False)
 
 # IBTrACS
 # -------
-'''
-print('loading IBTrACS...')
-ibtracs_storms = list()
-for year in range(1980,2020):
-    for hemisphere in ['NH','SH']:
-        ibtracs_fn = '{}_IbTracs_v4.{}.tracks'.format(year,hemisphere)
-        ibtracs_ffp = os.path.join(ibtracs_dir,ibtracs_fn)
-        ibtracs_storms.extend(list(track_ibtracs.load(ibtracs_ffp)))
-ibtracs_mslp_minima = [storm.mslp_min for storm in ibtracs_storms]
-ibtracs_vmax_maxima = [storm.vmax for storm in ibtracs_storms]
-filter_idx = [i for i in range(len(ibtracs_mslp_minima)) if ibtracs_mslp_minima[i] != 0.]
-ibtracs_mslp_minima = [ibtracs_mslp_minima[i] for i in filter_idx]
-ibtracs_vmax_maxima = [ibtracs_vmax_maxima[i] for i in filter_idx]
-
-print('loading IBTrACS...')
-#ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
-ibtracs_fn_nc = 'IBTrACS.since1980.v04r01.nc'
-ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
-mslp_variable = 'Minimum central preossure from  Official WMO agency' # [sic]
-vmax_variable = 'Maximum sustained wind speed from Official WMO agency'
-#mslp_variable = 'Minimum central pressure'
-#vmax_variable = 'tropical_cyclone_maximum_sustained_wind_speed'
-try:    # one variable with name
-    ibtracs_mslp = iris.load_cube(ibtracs_ffp_nc,mslp_variable)
-    ibtracs_vmax = iris.load_cube(ibtracs_ffp_nc,vmax_variable)
-except: # multiple variables with same name
-    ibtracs_mslp = iris.load(ibtracs_ffp,mslp_variable)
-    ibtracs_vmax = iris.load(ibtracs_ffp,vmax_variable)
-    for cube in ibtracs_mslp:
-        if cube.var_name == 'usa_pres':
-            ibtracs_mslp = cube.copy()
-            break
-    for cube in ibtracs_vmax:
-        if cube.var_name == 'usa_wind':
-            ibtracs_vmax = cube.copy()
-            break
-n_storms = ibtracs_vmax.shape[0]
-print(n_storms)
-ibtracs_mslp_minima = list()
-ibtracs_vmax_maxima = list()
-for i in range(n_storms):
-    mslp_min_i = np.min(ibtracs_mslp[i].data)
-    vmax_max_i = np.max(ibtracs_vmax[i].data)
-    if mslp_min_i > 0 and vmax_max_i > 0:
-        ibtracs_mslp_minima.append(mslp_min_i)
-        ibtracs_vmax_maxima.append(vmax_max_i/1.944)    # convert to m/s
-'''
 print('loading IBTrACS...')
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
@@ -107,7 +60,7 @@ ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
 ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
 
 print('processing IBTrACS...')
-ibtracs_mslp_minima, ibtracs_vmax_maxima  = utilities.process_ibtracs_pressure_wind_to_1min(ibtracs_ffp_nc,years[0],years[-1])
+ibtracs_mslp_minima, ibtracs_vmax_maxima  = utilities.process_ibtracs_pressure_wind_to_10min(ibtracs_ffp_nc,years[0],years[-1])
 idx = np.isfinite(ibtracs_vmax_maxima) & np.isfinite(ibtracs_mslp_minima)
 ibtracs_mslp_minima = np.array(ibtracs_mslp_minima)[idx]
 ibtracs_vmax_maxima = np.array(ibtracs_vmax_maxima)[idx]
@@ -135,7 +88,7 @@ for member in MEMBERS:
     cycle = MEMBERS[member]['cycle']
     grid = MEMBERS[member]['grid']
     duration = MEMBERS[member]['duration']
-    if member.startswith('ngc3') or member.startswith('ngc4'):
+    if member.startswith('ngc3'):
         zoom = member.rsplit('_')[-1]
     startdate = MEMBERS[member]['startdate']
     enddate = MEMBERS[member]['enddate']
@@ -143,10 +96,7 @@ for member in MEMBERS:
     label = MEMBERS[member]['label']
     label_fig = MEMBERS[member]['label_fig']
 
-    if member.startswith('IFS') and 'production' in member:
-        track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_nside512_maxgap{maxgap}.txt'.format(
-            member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap)
-    elif member.startswith('ngc3') or member.startswith('ngc4'):
+    if member.startswith('ngc3'):
         track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_maxgap{maxgap}_zoom{zoom}.txt'.format(
             member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap,zoom=zoom)
     else:
@@ -214,6 +164,6 @@ ax.set_ylabel(r'$\it{p}_{min}$ [hPa]')
 #ax.set_title('All TCs')
 plt.legend(loc = 'best',ncol = 1,prop = dict(size = 9),frameon = False)
 
-plt.savefig('figures/wind_pressure_relationship_cycle4_TempExt.pdf')
+plt.savefig('figures/baker_et_al_2024_grl_fig_2.pdf')
 plt.show()
 print('done.')
