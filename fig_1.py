@@ -9,7 +9,7 @@
 # (Data sources are documented therein.)
 
 
-import os, iris
+import os
 import xarray as xr
 import numpy as np
 from datetime import datetime
