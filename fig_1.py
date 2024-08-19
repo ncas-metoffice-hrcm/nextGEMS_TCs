@@ -48,8 +48,7 @@ print('loading IBTrACS...')
 
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
-#ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
-ibtracs_fn_nc = 'IBTrACS.since1980.v04r01.nc'
+ibtracs_fn_nc = 'IBTrACS.since1980.v04r00.nc'
 ibtracs_ffp_nc = os.path.join(ibtracs_dir,ibtracs_fn_nc)
 ibtracs_data = xr.open_dataset(ibtracs_ffp_nc)
 ibtracs_mslp = ibtracs_data.wmo_pres
