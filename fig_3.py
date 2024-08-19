@@ -24,8 +24,6 @@ from utilities import utilities
 maxgap = '0'
 
 ri_threshold = 15.4     # 15.4 m/s = 30 kt
-major_threshold = 49.4  # m/s
-hurr_threshold = 33.  # m/s
 
 percentile = 10.    # top percentile of storms
 
@@ -57,9 +55,7 @@ figure_args = dict(
     dv = dict(
         obs_unit = r'ms$^{-1}$ 24h$^{-1}$',
         BINS = np.arange(-30.,36.,3.),
-        #xaxis_ri = range(-30,31,5),
         xlabel = '24-h intensification rate',
-        #y_max = 0.06,
         leg_loc = 2,
         tit_loc = 1))
 
