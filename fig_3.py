@@ -67,7 +67,7 @@ RI_CASES = dict()
 STRONGEST_CASES = dict()
 
 # Load IBTrACS
-# (netcdf data for RI plot and ascii data for composite timeseries -- both give an identical intensification rate distribution)
+# (checked: netcdf data and ascii data give an identical intensification rate distribution)
 print('loading IBTrACS...')
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
@@ -101,7 +101,7 @@ for idx in main_idx:
             if not np.isnan(storm_vmax).all() and storm_lifetime >= 1.:                                         # omit < 1 day
                 vmax_idx = np.where(storm_vmax == np.nanmax(storm_vmax))[0]
                 storm_dv = utilities.get_storm_dv_ibtracs(storm_vmax)
-                if storm_dv:# and max(storm_vmax) >= threshold_vmax:
+                if storm_dv:
                     ibtracs_dv_maxima.extend(storm_dv)
 
 BINS = figure_args['dv']['BINS']
@@ -211,8 +211,6 @@ for member in members:
     plt.plot(PDFs['dv'][member][1][:-1],PDFs['dv'][member][0],color = MEMBERS[member]['colour'],linewidth = 1.,label = member)
 plt.xlim(15,30)
 plt.ylim(0,0.002)
-#plt.gca().set_yscale('log')
-#plt.ylim(1E-4,2E-3)
 plt.yticks([0.,0.0005,0.001,0.0015,0.002],[str(x) for x in [0.0,0.5,1.0,1.5,2.0]])
 ax.set_ylabel(r'x10$^{-3}$')
 ax.yaxis.set_label_coords(-0.15,1.1)
@@ -361,5 +359,4 @@ plt.tight_layout()
 # Save
 plt.savefig('figures/baker_et_al_2024_grl_fig_3ab.pdf',bbox_inches = 'tight')
 plt.show()
-
 print('done')
