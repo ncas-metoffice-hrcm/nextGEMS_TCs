@@ -1,6 +1,12 @@
 #!/bin/python3
 
-# tc_frequency_cycle4.py
+# fig_1.py
+#
+# This script reproduces Figure 1 in the following peer-reviewed publication:
+# Baker, A. J., Vannière, B., and Vidale, P. L. On the realism of tropical cyclones simulated
+# in global storm-resolving climate models. Geophysical Research Letters 51, e2024GL109841.
+# https://doi. org/10.1029/2024GL109841.
+# (Data sources are documented therein.)
 
 
 import os, iris
@@ -10,29 +16,20 @@ from datetime import datetime
 from collections import OrderedDict
 import matplotlib.pylab as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from storm_assess import track_tempext_nextgems, track_ibtracs
+from storm_assess import track_tempext_nextgems
 from utilities import utilities
-
-
-# OPTIONS
-# -------
-knots = False # False = m/s
-
-maxgap = '0'
 
 
 # SETUP
 # -----
-members = utilities.declare_nextgems_simulations()
-MEMBERS = dict()
-for member in members:
-    if not 'HAM' in member:
-        MEMBERS[member] = members[member]
+maxgap = '0'
 
-ibtracs_dir = '/work/bb1153/b381900/data/observations/IBTrACS_v4/'
-track_dir = '/work/bb1153/b381900/tracking/TempestExtremes/tracks/'
+MEMBERS = utilities.declare_nextgems_simulations()
 
-resol_labels = ['','9 km','4.4 km','2.8 km','28 km','9 km','9 km','4.4 km','9 km','9 km','10km','10 km','5 km','24 km','6 km','12 km']
+ibtracs_dir = 'data/IBTrACS_v4/'
+track_dir = 'tracks/'
+
+resol_labels = ['','9 km','4.4 km','2.8 km','28 km','9 km','9 km','4.4 km','10km','10 km','5 km','24 km','6 km']
 colours = [MEMBERS[member]['colour'] for member in MEMBERS]
 
 figure, axes = plt.subplots(ncols = 3, nrows = 1,figsize = (12,6))
@@ -48,41 +45,6 @@ TC_ACE_nh = dict()
 # IBTrACS
 # -------
 print('loading IBTrACS...')
-
-'''
-years = range(1980,2021)
-ibtracs_storms = dict()
-for hemisphere in ['NH','SH']:
-    ibtracs_storms[hemisphere] = list()
-    for year in years:
-        ibtracs_fn = '{}_IbTracs_v4.{}.tracks'.format(year,hemisphere)
-        ibtracs_ffp = os.path.join(ibtracs_dir,ibtracs_fn)
-        ibtracs_storms[hemisphere].extend(list(track_ibtracs.load(ibtracs_ffp)))
-ibtracs_storms['all'] = ibtracs_storms['NH']+ibtracs_storms['SH']
-
-TC_N_all['IBTrACS'] = len(ibtracs_storms['all']) / len(years)
-TC_N_nh['IBTrACS'] = len(ibtracs_storms['NH']) / len(years)
-TC_DAYS_all['IBTrACS'] = sum([storm.nrecords()/4. for storm in ibtracs_storms['all']]) / len(years)
-TC_DAYS_nh['IBTrACS'] = sum([storm.nrecords()/4. for storm in ibtracs_storms['NH']]) / len(years)
-ace_ibtracs_all = list()
-for storm in ibtracs_storms['all']:
-    if not None in [storm.obs[i].vmax for i in range(storm.nrecords())]:
-        if knots:
-            ace_storm = 1E-4*sum([storm.obs[i].extras['vmax_kts']**2 for i in range(storm.nrecords())])
-        else:
-            ace_storm = 1E-4*sum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
-        ace_ibtracs_all.append(ace_storm)
-TC_ACE_all['IBTrACS'] = sum(ace_ibtracs_all) / len(years)
-ace_ibtracs_nh = list()
-for storm in ibtracs_storms['NH']:
-    if not None in [storm.obs[i].vmax for i in range(storm.nrecords())]:
-        if knots:
-            ace_storm = 1E-4*sum([storm.obs[i].extras['vmax_kts']**2 for i in range(storm.nrecords())])
-        else:
-            ace_storm = 1E-4*sum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
-        ace_ibtracs_nh.append(ace_storm)
-TC_ACE_nh['IBTrACS'] = sum(ace_ibtracs_nh) / len(years)
-'''
 
 years = range(1980,2023)
 print(' ...year range {}-{}'.format(years[0],years[-1]))
@@ -117,15 +79,9 @@ for idx in main_idx:
             if storm_lifetime >= 1. and np.nanmax(storm_vmax) >= (17.*1.94384):                   # i.e., > 1 day and > TS intensity
                 storm_lifetimes_all.append(storm_lifetime)
                 if (d_2-d_1).total_seconds()/60**2 == 6.:    # check whether 6 hourly
-                    if knots:
-                        ace_storm = 1E-4*np.nansum(storm_vmax**2)
-                    else:
-                        ace_storm = 1E-4*np.nansum((storm_vmax/1.94384)**2)
+                    ace_storm = 1E-4*np.nansum((storm_vmax/1.94384)**2)
                 elif (d_2-d_1).total_seconds()/60**2 == 3.:  # check whether 3 hourly
-                    if knots:
-                        ace_storm = 1E-4*np.nansum(storm_vmax[::2]**2)
-                    else:
-                        ace_storm = 1E-4*np.nansum((storm_vmax[::2]/1.94384)**2)
+                    ace_storm = 1E-4*np.nansum((storm_vmax[::2]/1.94384)**2)
                 ace_ibtracs_all.append(ace_storm)
                 storm_lat = ibtracs_lat[idx].data[:numobs]
                 if np.mean(storm_lat) > 0.:                 # check whether NH
@@ -154,10 +110,7 @@ for member in MEMBERS:
     enddate = MEMBERS[member]['enddate']
     label = MEMBERS[member]['label']
 
-    if member.startswith('IFS') and 'production' in member:
-        track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_nside512_maxgap{maxgap}.txt'.format(
-            member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap)
-    elif member.startswith('ngc3') or member.startswith('ngc4'):
+    if member.startswith('ngc3'):
         track_fn = '{member}_{startdate}-{enddate}_TempExt_{grid}_grid_maxgap{maxgap}_zoom{zoom}.txt'.format(
             member=label,startdate=startdate,enddate=enddate,grid=grid,maxgap=maxgap,zoom=zoom)
     else:
@@ -179,17 +132,11 @@ for member in MEMBERS:
     TC_DAYS_nh[member] = sum([storm.nrecords()/4. for storm in filtered_storms_nh]) / duration
     ace_member_all = list()
     for storm in filtered_storms_all:
-        if knots:
-            ace_storm = 1E-4*np.nansum([(storm.obs[i].vmax*1.94384)**2 for i in range(storm.nrecords())])
-        else:
-            ace_storm = 1E-4*np.nansum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
+        ace_storm = 1E-4*np.nansum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
         ace_member_all.append(ace_storm)
     ace_member_nh = list()
     for storm in filtered_storms_nh:
-        if knots:
-            ace_storm = 1E-4*np.nansum([(storm.obs[i].vmax*1.94384)**2 for i in range(storm.nrecords())])
-        else:
-            ace_storm = 1E-4*np.nansum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
+        ace_storm = 1E-4*np.nansum([storm.obs[i].vmax**2 for i in range(storm.nrecords())])
         ace_member_nh.append(ace_storm)
 
     TC_ACE_all[member] = sum(ace_member_all) / duration
@@ -233,12 +180,8 @@ axes[0].set_title('a',fontweight='bold',loc='left')
 axes[1].set_ylim(0,1000)
 axes[1].set_ylabel(r'$\it{d}_{TC}$ [year$^{-1}$]')
 axes[1].set_title('b',fontweight='bold',loc='left')
-if knots:
-    axes[2].set_ylim(0,1200)
-    axes[2].set_ylabel(r'$\sum\it{u}_{10}$$^{2}$ [kt$^{2}year^{-1}$]')
-else:
-    axes[2].set_ylim(0,350)
-    axes[2].set_ylabel(r'$\sum\it{u}_{10}$$^{2}$ [m$^{2}s^{-2}year^{-1}$]')
+axes[2].set_ylim(0,350)
+axes[2].set_ylabel(r'$\sum\it{u}_{10}$$^{2}$ [m$^{2}s^{-2}year^{-1}$]')
 axes[2].set_title('c',fontweight='bold',loc='left')
 
 for loc in ['top','right']:
@@ -247,9 +190,6 @@ for loc in ['top','right']:
 
 plt.tight_layout()
 
-if knots:
-    plt.savefig('figures/tc_frequency_statistics_cycle4_TempExt_kts.pdf')
-else:
-    plt.savefig('figures/tc_frequency_statistics_cycle4_TempExt.pdf')
+plt.savefig('figures/baker_et_al_2024_grl_fig_1.pdf')
 plt.show()
 print('done.')
