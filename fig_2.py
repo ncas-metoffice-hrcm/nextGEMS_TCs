@@ -27,10 +27,10 @@ maxgap = '0'
 
 MEMBERS = utilities.declare_nextgems_simulations()
 
-df = 2
+# df = "degrees freedom for 2nd order polynomial"
 
-ibtracs_dir = '/work/bb1153/b381900/data/observations/IBTrACS_v4/'
-track_dir = '/work/bb1153/b381900/tracking/TempestExtremes/tracks/'
+ibtracs_dir = 'data/IBTrACS_v4/'
+track_dir = 'tracks/'
 
 resol_labels = ['','9 km','4 km','2.8 km','28 km','9 km','9 km','4.4 km','5 km','10 km','10 km','24 km','6 km']
 
