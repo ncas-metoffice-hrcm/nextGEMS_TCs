@@ -1,6 +1,6 @@
 # nextGEMS_TCs
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20050846.svg)](https://doi.org/10.5281/zenodo.20050846)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20050845.svg)](https://doi.org/10.5281/zenodo.20050845)
 
 Analysis code and data for:  
 
